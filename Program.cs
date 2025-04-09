@@ -27,7 +27,7 @@ namespace ConsoleGame
                 {
                     float x = (float)i / ScreenWidth * 2.0f - 1.0f;
                     float y = (float)j / ScreenHeight * 2.0f - 1.0f;
-                    x *= aspect * pixelAspect;
+                    //x *= aspect * pixelAspect;
                     char pixel = ' ';
                     if (x * x + y * y < 0.5) pixel = '@';
                     Screen[i + j * ScreenWidth] = pixel;

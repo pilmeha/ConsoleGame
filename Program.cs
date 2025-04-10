@@ -1,13 +1,17 @@
 ﻿//// See https://aka.ms/new-console-template for more information
 //Console.WriteLine("Hello, World!");
 using System;
+using System.ComponentModel;
+using System.Drawing;
+using System.IO;
+using System.Net.NetworkInformation;
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace ConsoleGame
 {
     class Program
     {
-        
         private const int ScreenWidth = 150;
         private const int ScreenHeight = 50;
 
@@ -48,7 +52,7 @@ namespace ConsoleGame
                 {
                     var consoleKey = Console.ReadKey(true).Key;
 
-                    switch(consoleKey)
+                    switch (consoleKey)
                     {
                         case ConsoleKey.A:
                             _playerA += 5 * elapsedTime;

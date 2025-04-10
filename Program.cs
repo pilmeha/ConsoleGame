@@ -25,8 +25,6 @@ namespace ConsoleGame
 
         private static readonly StringBuilder Map = new StringBuilder();
 
-        //private static StringBuilder miniMap = new StringBuilder();
-
         private static readonly char[] Screen = new char[ScreenWidth * ScreenHeight];
 
         private static readonly Random _random = new Random();
@@ -93,12 +91,7 @@ namespace ConsoleGame
                             break;
                     }
 
-                    //InitMap();
-
                 }
-
-                // Clear previous frame
-                //Array.Fill(Screen, ' ');
 
                 //Ray casting
 
@@ -137,18 +130,6 @@ namespace ConsoleGame
                 Screen[(int)(_playerY + 1) * ScreenWidth + (int)_playerX] = 'P';
 
                 // Draw direction indicator (3 points for better visibility)
-
-                //// Очистка предыдущих направлений
-                //for (int y = 0; y < MapHeight; y++)
-                //{
-                //    for (int x = 0; x < MapWidth; x++)
-                //    {
-                //        if (Screen[(y + 1) * ScreenWidth + x] == '*')
-                //            Screen[(y + 1) * ScreenWidth + x] = Map[y * MapWidth + x];
-                //    }
-                //}
-
-                // Отрисовка нового направления (конус обзора)
                 for (int x = 0; x < ScreenWidth; x++)
                 {
                     double rayAngle = _playerA + Fov / 2 - x * Fov / ScreenWidth;
@@ -348,12 +329,6 @@ namespace ConsoleGame
             }
 
             return result;
-        }
-
-        private static void InitMap()
-        {
-            Map.Clear();
-            //Map = miniMap;
         }
     }
 }

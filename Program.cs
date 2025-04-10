@@ -8,18 +8,82 @@ namespace ConsoleGame
 {
     class Program
     {
-        
+
+        private static void GenerateMaze()
+        {
+            // Инициализация карты сплошными стенами
+            Map.Clear();
+            for (int y = 0; y < MapHeight; y++)
+            {
+                for (int x = 0; x < MapWidth; x++)
+                {
+                    Map.Append('#');
+                }
+            }
+
+            // Начальная точка для генерации (должна быть нечетной)
+            int startX = 1;
+            int startY = 1;
+
+            // Запускаем рекурсивную генерацию
+            CarvePassage(startX, startY);
+
+            // Убедимся, что границы остаются стенами
+            for (int x = 0; x < MapWidth; x++)
+            {
+                Map[x] = '#'; // Верхняя граница
+                Map[(MapHeight - 1) * MapWidth + x] = '#'; // Нижняя граница
+            }
+            for (int y = 0; y < MapHeight; y++)
+            {
+                Map[y * MapWidth] = '#'; // Левая граница
+                Map[y * MapWidth + MapWidth - 1] = '#'; // Правая граница
+            }
+
+            // Создаем вход и выход
+            Map[1 * MapWidth + 1] = '.'; // Вход
+            Map[(MapHeight - 2) * MapWidth + (MapWidth - 2)] = '.'; // Выход
+        }
+
+        private static void CarvePassage(int x, int y)
+        {
+            // Делаем текущую клетку проходом
+            Map[y * MapWidth + x] = '.';
+
+            // Создаем случайный порядок направлений
+            var directions = new[]
+            {
+                new { dx = 0, dy = -2 }, // Вверх
+                new { dx = 0, dy = 2 },  // Вниз
+                new { dx = -2, dy = 0 }, // Влево
+                new { dx = 2, dy = 0 }   // Вправо
+            }.OrderBy(d => _random.Next()).ToList();
+
+            foreach (var dir in directions)
+            {
+                int newX = x + dir.dx;
+                int newY = y + dir.dy;
+
+                if (newX > 0 && newX < MapWidth - 1 && newY > 0 && newY < MapHeight - 1 && Map[newY * MapWidth + newX] == '#')
+                {
+                    // Прорубаем стену между текущей и новой клеткой
+                    Map[(y + dir.dy / 2) * MapWidth + (x + dir.dx / 2)] = '.';
+                    CarvePassage(newX, newY);
+                }
+            }
+        }
+
         private const int ScreenWidth = 150;
         private const int ScreenHeight = 50;
 
-        private const int MapWidth = 32;
-        private const int MapHeight = 32;
+        private const int MapWidth = 33;
+        private const int MapHeight = 33;
 
         private const double Fov = Math.PI / 3;
         private const double Depth = 16;
 
-        private static double _playerX = 5;
-        private static double _playerY = 5;
+        private static double _playerX = 1;
+        private static double _playerY = 1;
         private static double _playerA = 0;
 
 
@@ -36,7 +100,8 @@ namespace ConsoleGame
             Console.CursorVisible = false;
 
             //InitMap();
-            GenerateRandomMap();
+            //GenerateRandomMap();
+            GenerateMaze();
             EnsurePlayerPosition();
 
             DateTime dateTimeFrom = DateTime.Now;
@@ -86,7 +151,8 @@ namespace ConsoleGame
                             }
 
                         case ConsoleKey.R:
-                            GenerateRandomMap();
+                            //GenerateRandomMap();
+                            GenerateMaze();
                             EnsurePlayerPosition();
                             break;
                     }

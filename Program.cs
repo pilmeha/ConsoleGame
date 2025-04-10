@@ -2,6 +2,7 @@
 //Console.WriteLine("Hello, World!");
 using System;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ConsoleGame
 {
@@ -24,7 +25,11 @@ namespace ConsoleGame
 
         private static readonly StringBuilder Map = new StringBuilder();
 
+        //private static StringBuilder miniMap = new StringBuilder();
+
         private static readonly char[] Screen = new char[ScreenWidth * ScreenHeight];
+
+        private static readonly Random _random = new Random();
 
         static async Task Main(string[] args)
         {
@@ -32,7 +37,9 @@ namespace ConsoleGame
             Console.SetBufferSize(ScreenWidth, ScreenHeight);
             Console.CursorVisible = false;
 
-            InitMap();
+            //InitMap();
+            GenerateRandomMap();
+            EnsurePlayerPosition();
 
             DateTime dateTimeFrom = DateTime.Now;
 
@@ -41,8 +48,6 @@ namespace ConsoleGame
                 DateTime dateTimeTo = DateTime.Now;
                 double elapsedTime = (dateTimeTo - dateTimeFrom).TotalSeconds;
                 dateTimeFrom = DateTime.Now;
-
-                //_playerA += 0.5 * elapsedTime;
 
                 if (Console.KeyAvailable)
                 {
@@ -81,10 +86,19 @@ namespace ConsoleGame
                                 }
                                 break;
                             }
+
+                        case ConsoleKey.R:
+                            GenerateRandomMap();
+                            EnsurePlayerPosition();
+                            break;
                     }
 
-                    InitMap();
+                    //InitMap();
+
                 }
+
+                // Clear previous frame
+                //Array.Fill(Screen, ' ');
 
                 //Ray casting
 
@@ -122,8 +136,100 @@ namespace ConsoleGame
                 //player
                 Screen[(int)(_playerY + 1) * ScreenWidth + (int)_playerX] = 'P';
 
+                // Draw direction indicator (3 points for better visibility)
+
+                //// Очистка предыдущих направлений
+                //for (int y = 0; y < MapHeight; y++)
+                //{
+                //    for (int x = 0; x < MapWidth; x++)
+                //    {
+                //        if (Screen[(y + 1) * ScreenWidth + x] == '*')
+                //            Screen[(y + 1) * ScreenWidth + x] = Map[y * MapWidth + x];
+                //    }
+                //}
+
+                // Отрисовка нового направления (конус обзора)
+                for (int x = 0; x < ScreenWidth; x++)
+                {
+                    double rayAngle = _playerA + Fov / 2 - x * Fov / ScreenWidth;
+                    for (int i = 1; i <= 15; i++) // Дальность направления
+                    {
+                        int dirX = (int)(_playerX + i * Math.Sin(rayAngle));
+                        int dirY = (int)(_playerY + i * Math.Cos(rayAngle));
+
+                        if (dirX >= 0 && dirX < MapWidth && dirY >= 0 && dirY < MapHeight)
+                        {
+                            if (Map[dirY * MapWidth + dirX] != '#')
+                            {
+                                Screen[(dirY + 1) * ScreenWidth + dirX] = '*';
+                            }
+                            else
+                            {
+                                break; // Не рисуем направление через стены
+                            }
+                        }
+                    }
+                }
+
                 Console.SetCursorPosition(0, 0);
                 Console.Write(Screen);
+            }
+        }
+
+        private static void GenerateRandomMap()
+        {
+            Map.Clear();
+            
+            // Fill the map with empty spaces first
+            for (int y = 0; y < MapHeight; y++)
+            {
+                for (int x = 0; x < MapWidth; x++)
+                {
+                    // Borders are always walls
+                    if (x == 0 || y == 0 || x == MapWidth - 1 || y == MapHeight - 1)
+                    {
+                        Map.Append('#');
+                    }
+                    else
+                    {
+                        Map.Append('.');
+                    }
+                }
+            }
+
+            // Add random walls
+            for (int y = 1; y < MapHeight - 1; y++)
+            {
+                for (int x = 1; x < MapWidth - 1; x++)
+                {
+                    // 30% chance to place a wall (adjust this value to change density)
+                    if (_random.NextDouble() < 0.1)
+                    {
+                        Map[y * MapWidth + x] = '#';
+                    }
+                }
+            }
+
+            // Ensure the player starting area is clear
+            for (int y = (int)_playerY - 2; y <= (int)_playerY + 2; y++)
+            {
+                for (int x = (int)_playerX - 2; x <= (int)_playerX + 2; x++)
+                {
+                    if (x > 0 && x < MapWidth - 1 && y > 0 && y < MapHeight - 1)
+                    {
+                        Map[y * MapWidth + x] = '.';
+                    }
+                }
+            }
+        }
+
+        private static void EnsurePlayerPosition()
+        {
+            // Make sure player starts in an empty space
+            while (Map[(int)_playerY * MapWidth + (int)_playerX] != '.')
+            {
+                _playerX = _random.Next(1, MapWidth - 1);
+                _playerY = _random.Next(1, MapHeight - 1);
             }
         }
 
@@ -184,10 +290,12 @@ namespace ConsoleGame
                             Math.Acos(boundsVectorList[1].cos) < boundAngle)
                             isBound = true;
                     }
-                    else
-                    {
-                        Map[testY * MapWidth + testX] = '*';
-                    }
+                    //else
+                    //{
+                    //    //Screen[testY * MapWidth + testX] = '*';
+
+                    //    Map[testY * MapWidth + testX] = '*';
+                    //}
                 }
             }
 
@@ -245,38 +353,7 @@ namespace ConsoleGame
         private static void InitMap()
         {
             Map.Clear();
-            Map.Append("################################");
-            Map.Append("#.....................#........#");
-            Map.Append("#.....................#........#");
-            Map.Append("#.....................#........#");
-            Map.Append("#.....................#........#");
-            Map.Append("#.....................#........#");
-            Map.Append("#.....................#........#");
-            Map.Append("#.....................#..#######");
-            Map.Append("#.........#########............#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#..........#...................#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#..............................#");
-            Map.Append("#####...#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......................#");
-            Map.Append("################################");
+            //Map = miniMap;
         }
     }
 }

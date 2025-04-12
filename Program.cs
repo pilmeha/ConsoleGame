@@ -1,6 +1,7 @@
 ﻿//// See https://aka.ms/new-console-template for more information
 //Console.WriteLine("Hello, World!");
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -8,6 +9,20 @@ namespace ConsoleGame
 {
     class Program
     {
+
+        // Импорт функций для работы с мышью
+        [DllImport("user32.dll")]
+        public static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetCursorPos(int X, int Y);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int X;
+            public int Y;
+        }
 
         private static void GenerateMaze()
         {
@@ -99,12 +114,17 @@ namespace ConsoleGame
             Console.SetBufferSize(ScreenWidth, ScreenHeight);
             Console.CursorVisible = false;
 
-            //InitMap();
+            // Центрируем курсор мыши
+            POINT center = new POINT { X = ScreenWidth / 2, Y = ScreenHeight / 2 };
+            SetCursorPos(center.X, center.Y);
+
+            InitMap();
             //GenerateRandomMap();
-            GenerateMaze();
+            //GenerateMaze();
             EnsurePlayerPosition();
 
             DateTime dateTimeFrom = DateTime.Now;
+            POINT lastMousePos = center;
 
             while (true)
             {
@@ -112,19 +132,64 @@ namespace ConsoleGame
                 double elapsedTime = (dateTimeTo - dateTimeFrom).TotalSeconds;
                 dateTimeFrom = DateTime.Now;
 
+                // Управление камерой мышью
+                POINT currentMousePos;
+                GetCursorPos(out currentMousePos);
+
+                if (currentMousePos.X != lastMousePos.X)
+                {
+                    double mouseSensitivity = 0.001;
+                    _playerA -= (currentMousePos.X - lastMousePos.X) * mouseSensitivity;
+
+                    // Возвращаем курсор в центр
+                    SetCursorPos(center.X, center.Y);
+                    currentMousePos = center;
+                }
+
+                lastMousePos = currentMousePos;
+
+                // Возвращаем курсор в центр
+                SetCursorPos(center.X, center.Y);
+
                 if (Console.KeyAvailable)
                 {
                     var consoleKey = Console.ReadKey(true).Key;
 
-                    switch(consoleKey)
+                    switch (consoleKey)
                     {
+                        //case ConsoleKey.A:
+                        //    _playerA += 5 * elapsedTime;
+                        //    break;
+
+                        //case ConsoleKey.D:
+                        //    _playerA -= 5 * elapsedTime;
+                        //    break;
+
                         case ConsoleKey.A:
-                            _playerA += 5 * elapsedTime;
-                            break;
+                            {
+                                // Движение влево (перпендикулярно направлению взгляда)
+                                _playerX += Math.Sin(_playerA + Math.PI / 2) * 20 * elapsedTime;
+                                _playerY += Math.Cos(_playerA + Math.PI / 2) * 20 * elapsedTime;
+                                if (Map[(int)_playerY * MapWidth + (int)_playerX] == '#')
+                                {
+                                    _playerX -= Math.Sin(_playerA + Math.PI / 2) * 20 * elapsedTime;
+                                    _playerY -= Math.Cos(_playerA + Math.PI / 2) * 20 * elapsedTime;
+                                }
+                                break;
+                            }
 
                         case ConsoleKey.D:
-                            _playerA -= 5 * elapsedTime;
-                            break;
+                            {
+                                // Движение вправо (перпендикулярно направлению взгляда)
+                                _playerX += Math.Sin(_playerA - Math.PI / 2) * 20 * elapsedTime;
+                                _playerY += Math.Cos(_playerA - Math.PI / 2) * 20 * elapsedTime;
+                                if (Map[(int)_playerY * MapWidth + (int)_playerX] == '#')
+                                {
+                                    _playerX -= Math.Sin(_playerA - Math.PI / 2) * 20 * elapsedTime;
+                                    _playerY -= Math.Cos(_playerA - Math.PI / 2) * 20 * elapsedTime;
+                                }
+                                break;
+                            }
 
                         case ConsoleKey.W:
                             {
@@ -152,11 +217,14 @@ namespace ConsoleGame
 
                         case ConsoleKey.R:
                             //GenerateRandomMap();
-                            GenerateMaze();
+                            //GenerateMaze();
                             EnsurePlayerPosition();
                             break;
+
+                        case ConsoleKey.Escape:
+                            return; //выход из игры
                     }
-                    //InitMap();
+                    InitMap();
 
                 }
 
@@ -222,6 +290,7 @@ namespace ConsoleGame
                 Console.SetCursorPosition(0, 0);
                 Console.Write(Screen);
             }
+
         }
 
         private static void GenerateRandomMap()
@@ -401,38 +470,39 @@ namespace ConsoleGame
         private static void InitMap()
         {
             Map.Clear();
-            Map.Append("################################");
-            Map.Append("#.........#...........#........#");
-            Map.Append("#.........#...........#........#");
-            Map.Append("#.....................#........#");
-            Map.Append("#################.....#........#");
-            Map.Append("#.....................#........#");
-            Map.Append("#........#....#.......#........#");
-            Map.Append("#........#....#.......#..#######");
-            Map.Append("######...##########............#");
-            Map.Append("#....#...#.....................#");
-            Map.Append("#....#...#.......#########.....#");
-            Map.Append("#....#...#...............#.....#");
-            Map.Append("#....#...#############...#.....#");
-            Map.Append("#........................#.....#");
-            Map.Append("#..##############........#.....#");
-            Map.Append("#....#.....#.............#.....#");
-            Map.Append("#....#............########.....#");
-            Map.Append("#....#...................#.....#");
-            Map.Append("#....#.........#...............#");
-            Map.Append("#..............###########.....#");
-            Map.Append("#####...#......#...............#");
-            Map.Append("#.......#......#...............#");
-            Map.Append("#.......#......#...............#");
-            Map.Append("#.......#......................#");
-            Map.Append("#.......#......#.....#.........#");
-            Map.Append("#.......###.########.#.........#");
-            Map.Append("#.......#....#.......#..########");
-            Map.Append("#.......#....#.......#.........#");
-            Map.Append("#.......#....#.......#.........#");
-            Map.Append("#............#######.#.........#");
-            Map.Append("#.......#............#.........#");
-            Map.Append("################################");
+            Map.Append("#################################");
+            Map.Append("#.........#...........#.........#");
+            Map.Append("#.........#...........#.........#");
+            Map.Append("#.....................#.........#");
+            Map.Append("#################.....#.........#");
+            Map.Append("#.....................#.........#");
+            Map.Append("#........#....#.......#.........#");
+            Map.Append("#........#....#.......#..########");
+            Map.Append("######...##########.............#");
+            Map.Append("#....#...#......................#");
+            Map.Append("#....#...#.......#########......#");
+            Map.Append("#....#...#...............#......#");
+            Map.Append("#....#...#############...#......#");
+            Map.Append("#........................#......#");
+            Map.Append("#..##############........#......#");
+            Map.Append("#....#.....#.............#......#");
+            Map.Append("#....#............########......#");
+            Map.Append("#....#...................#......#");
+            Map.Append("#....#.........#................#");
+            Map.Append("#..............###########......#");
+            Map.Append("#####...#......#................#");
+            Map.Append("#.......#......#................#");
+            Map.Append("#.......#......#................#");
+            Map.Append("#.......#.......................#");
+            Map.Append("#.......#.......................#");
+            Map.Append("#.......#......#.....#..........#");
+            Map.Append("#.......###.########.#..........#");
+            Map.Append("#.......#....#.......#..#########");
+            Map.Append("#.......#....#.......#..........#");
+            Map.Append("#.......#....#.......#..........#");
+            Map.Append("#............#######.#..........#");
+            Map.Append("#.......#............#..........#");
+            Map.Append("#################################");
         }
     }
 }

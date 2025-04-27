@@ -3,91 +3,11 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace ConsoleGame
 {
     class Program
     {
-
-        // Импорт функций для работы с мышью
-        [DllImport("user32.dll")]
-        public static extern bool GetCursorPos(out POINT lpPoint);
-
-        [DllImport("user32.dll")]
-        public static extern bool SetCursorPos(int X, int Y);
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct POINT
-        {
-            public int X;
-            public int Y;
-        }
-
-        private static void GenerateMaze()
-        {
-            // Инициализация карты сплошными стенами
-            Map.Clear();
-            for (int y = 0; y < MapHeight; y++)
-            {
-                for (int x = 0; x < MapWidth; x++)
-                {
-                    Map.Append('#');
-                }
-            }
-
-            // Начальная точка для генерации (должна быть нечетной)
-            int startX = 1;
-            int startY = 1;
-
-            // Запускаем рекурсивную генерацию
-            CarvePassage(startX, startY);
-
-            // Убедимся, что границы остаются стенами
-            for (int x = 0; x < MapWidth; x++)
-            {
-                Map[x] = '#'; // Верхняя граница
-                Map[(MapHeight - 1) * MapWidth + x] = '#'; // Нижняя граница
-            }
-            for (int y = 0; y < MapHeight; y++)
-            {
-                Map[y * MapWidth] = '#'; // Левая граница
-                Map[y * MapWidth + MapWidth - 1] = '#'; // Правая граница
-            }
-
-            // Создаем вход и выход
-            Map[1 * MapWidth + 1] = '.'; // Вход
-            Map[(MapHeight - 2) * MapWidth + (MapWidth - 2)] = '.'; // Выход
-        }
-
-        private static void CarvePassage(int x, int y)
-        {
-            // Делаем текущую клетку проходом
-            Map[y * MapWidth + x] = '.';
-
-            // Создаем случайный порядок направлений
-            var directions = new[]
-            {
-                new { dx = 0, dy = -2 }, // Вверх
-                new { dx = 0, dy = 2 },  // Вниз
-                new { dx = -2, dy = 0 }, // Влево
-                new { dx = 2, dy = 0 }   // Вправо
-            }.OrderBy(d => _random.Next()).ToList();
-
-            foreach (var dir in directions)
-            {
-                int newX = x + dir.dx;
-                int newY = y + dir.dy;
-
-                if (newX > 0 && newX < MapWidth - 1 && newY > 0 && newY < MapHeight - 1 && Map[newY * MapWidth + newX] == '#')
-                {
-                    // Прорубаем стену между текущей и новой клеткой
-                    Map[(y + dir.dy / 2) * MapWidth + (x + dir.dx / 2)] = '.';
-                    CarvePassage(newX, newY);
-                }
-            }
-        }
-
         private const int ScreenWidth = 150;
         private const int ScreenHeight = 50;
 
@@ -114,18 +34,15 @@ namespace ConsoleGame
             Console.SetBufferSize(ScreenWidth, ScreenHeight);
             Console.CursorVisible = false;
 
-            // Центрируем курсор мыши
-            POINT center = new POINT { X = ScreenWidth / 2, Y = ScreenHeight / 2 };
-            SetCursorPos(center.X, center.Y);
-
-            //методы для разных режимов игры, раскоментируйте нужный, также нужно сделать в строках 220 и 230
-            //InitMap();
-            GenerateRandomMap();
+            //режимы игры, раскоментируйте нужный тут и еще в других местах
+            InitMap();
+            //GenerateRandomMap();
             //GenerateMaze();
+
+
             EnsurePlayerPosition();
 
             DateTime dateTimeFrom = DateTime.Now;
-            POINT lastMousePos = center;
 
             while (true)
             {
@@ -133,39 +50,12 @@ namespace ConsoleGame
                 double elapsedTime = (dateTimeTo - dateTimeFrom).TotalSeconds;
                 dateTimeFrom = DateTime.Now;
 
-                // Управление камерой мышью
-                POINT currentMousePos;
-                GetCursorPos(out currentMousePos);
-
-                if (currentMousePos.X != lastMousePos.X)
-                {
-                    double mouseSensitivity = 0.001;
-                    _playerA -= (currentMousePos.X - lastMousePos.X) * mouseSensitivity;
-
-                    // Возвращаем курсор в центр
-                    SetCursorPos(center.X, center.Y);
-                    currentMousePos = center;
-                }
-
-                lastMousePos = currentMousePos;
-
-                // Возвращаем курсор в центр
-                SetCursorPos(center.X, center.Y);
-
                 if (Console.KeyAvailable)
                 {
                     var consoleKey = Console.ReadKey(true).Key;
 
                     switch (consoleKey)
                     {
-                        //case ConsoleKey.A:
-                        //    _playerA += 5 * elapsedTime;
-                        //    break;
-
-                        //case ConsoleKey.D:
-                        //    _playerA -= 5 * elapsedTime;
-                        //    break;
-
                         case ConsoleKey.A:
                             {
                                 // Движение влево (перпендикулярно направлению взгляда)
@@ -216,9 +106,23 @@ namespace ConsoleGame
                                 break;
                             }
 
+                        case ConsoleKey.J:
+                            {
+                                // Поворот взгляда влево
+                                _playerA += 5 * elapsedTime;
+                                break;
+                            }
+
+                        case ConsoleKey.L:
+                            {
+                                // Поворот взгляда вправо
+                                _playerA -= 5 * elapsedTime;
+                                break;
+                            }
+
                         case ConsoleKey.R:
                             //раскоментируйте нужный режим игры
-                            GenerateRandomMap();
+                            //GenerateRandomMap();
                             //GenerateMaze();
                             EnsurePlayerPosition();
                             break;
@@ -226,8 +130,9 @@ namespace ConsoleGame
                         case ConsoleKey.Escape:
                             return; //выход из игры
                     }
+
                     //один из режимов игры, если что закоментируйте при изменение режима игры
-                    //InitMap();
+                    InitMap();
 
                 }
 
@@ -294,63 +199,6 @@ namespace ConsoleGame
                 Console.Write(Screen);
             }
 
-        }
-
-        private static void GenerateRandomMap()
-        {
-            Map.Clear();
-            
-            // Fill the map with empty spaces first
-            for (int y = 0; y < MapHeight; y++)
-            {
-                for (int x = 0; x < MapWidth; x++)
-                {
-                    // Borders are always walls
-                    if (x == 0 || y == 0 || x == MapWidth - 1 || y == MapHeight - 1)
-                    {
-                        Map.Append('#');
-                    }
-                    else
-                    {
-                        Map.Append('.');
-                    }
-                }
-            }
-
-            // Add random walls
-            for (int y = 1; y < MapHeight - 1; y++)
-            {
-                for (int x = 1; x < MapWidth - 1; x++)
-                {
-                    // 30% chance to place a wall (adjust this value to change density)
-                    if (_random.NextDouble() < 0.1)
-                    {
-                        Map[y * MapWidth + x] = '#';
-                    }
-                }
-            }
-
-            // Ensure the player starting area is clear
-            for (int y = (int)_playerY - 2; y <= (int)_playerY + 2; y++)
-            {
-                for (int x = (int)_playerX - 2; x <= (int)_playerX + 2; x++)
-                {
-                    if (x > 0 && x < MapWidth - 1 && y > 0 && y < MapHeight - 1)
-                    {
-                        Map[y * MapWidth + x] = '.';
-                    }
-                }
-            }
-        }
-
-        private static void EnsurePlayerPosition()
-        {
-            // Make sure player starts in an empty space
-            while (Map[(int)_playerY * MapWidth + (int)_playerX] != '.')
-            {
-                _playerX = _random.Next(1, MapWidth - 1);
-                _playerY = _random.Next(1, MapHeight - 1);
-            }
         }
 
         public static Dictionary<int, char> CastRay(int x)
@@ -468,6 +316,127 @@ namespace ConsoleGame
             }
 
             return result;
+        }
+
+        private static void EnsurePlayerPosition()
+        {
+            // Make sure player starts in an empty space
+            while (Map[(int)_playerY * MapWidth + (int)_playerX] != '.')
+            {
+                _playerX = _random.Next(1, MapWidth - 1);
+                _playerY = _random.Next(1, MapHeight - 1);
+            }
+        }
+
+        private static void GenerateRandomMap()
+        {
+            Map.Clear();
+
+            // Fill the map with empty spaces first
+            for (int y = 0; y < MapHeight; y++)
+            {
+                for (int x = 0; x < MapWidth; x++)
+                {
+                    // Borders are always walls
+                    if (x == 0 || y == 0 || x == MapWidth - 1 || y == MapHeight - 1)
+                    {
+                        Map.Append('#');
+                    }
+                    else
+                    {
+                        Map.Append('.');
+                    }
+                }
+            }
+
+            // Add random walls
+            for (int y = 1; y < MapHeight - 1; y++)
+            {
+                for (int x = 1; x < MapWidth - 1; x++)
+                {
+                    // 30% chance to place a wall (adjust this value to change density)
+                    if (_random.NextDouble() < 0.1)
+                    {
+                        Map[y * MapWidth + x] = '#';
+                    }
+                }
+            }
+
+            // Ensure the player starting area is clear
+            for (int y = (int)_playerY - 2; y <= (int)_playerY + 2; y++)
+            {
+                for (int x = (int)_playerX - 2; x <= (int)_playerX + 2; x++)
+                {
+                    if (x > 0 && x < MapWidth - 1 && y > 0 && y < MapHeight - 1)
+                    {
+                        Map[y * MapWidth + x] = '.';
+                    }
+                }
+            }
+        }
+
+        private static void GenerateMaze()
+        {
+            // Инициализация карты сплошными стенами
+            Map.Clear();
+            for (int y = 0; y < MapHeight; y++)
+            {
+                for (int x = 0; x < MapWidth; x++)
+                {
+                    Map.Append('#');
+                }
+            }
+
+            // Начальная точка для генерации (должна быть нечетной)
+            int startX = 1;
+            int startY = 1;
+
+            // Запускаем рекурсивную генерацию
+            CarvePassage(startX, startY);
+
+            // Убедимся, что границы остаются стенами
+            for (int x = 0; x < MapWidth; x++)
+            {
+                Map[x] = '#'; // Верхняя граница
+                Map[(MapHeight - 1) * MapWidth + x] = '#'; // Нижняя граница
+            }
+            for (int y = 0; y < MapHeight; y++)
+            {
+                Map[y * MapWidth] = '#'; // Левая граница
+                Map[y * MapWidth + MapWidth - 1] = '#'; // Правая граница
+            }
+
+            // Создаем вход и выход
+            Map[1 * MapWidth + 1] = '.'; // Вход
+            Map[(MapHeight - 2) * MapWidth + (MapWidth - 2)] = '.'; // Выход
+        }
+
+        private static void CarvePassage(int x, int y)
+        {
+            // Делаем текущую клетку проходом
+            Map[y * MapWidth + x] = '.';
+
+            // Создаем случайный порядок направлений
+            var directions = new[]
+            {
+                new { dx = 0, dy = -2 }, // Вверх
+                new { dx = 0, dy = 2 },  // Вниз
+                new { dx = -2, dy = 0 }, // Влево
+                new { dx = 2, dy = 0 }   // Вправо
+            }.OrderBy(d => _random.Next()).ToList();
+
+            foreach (var dir in directions)
+            {
+                int newX = x + dir.dx;
+                int newY = y + dir.dy;
+
+                if (newX > 0 && newX < MapWidth - 1 && newY > 0 && newY < MapHeight - 1 && Map[newY * MapWidth + newX] == '#')
+                {
+                    // Прорубаем стену между текущей и новой клеткой
+                    Map[(y + dir.dy / 2) * MapWidth + (x + dir.dx / 2)] = '.';
+                    CarvePassage(newX, newY);
+                }
+            }
         }
 
         private static void InitMap()

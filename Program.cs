@@ -1,4 +1,18 @@
-﻿//// See https://aka.ms/new-console-template for more information
+﻿//namespace ConsoleGame
+//{
+//    internal class Program
+//    {
+//        static async Task Main(string[] args)
+//        {
+//            var game = new Game();
+//            await game.RunAsync();
+//        }
+//    }
+//}
+
+
+
+//// See https://aka.ms/new-console-template for more information
 //Console.WriteLine("Hello, World!");
 using System;
 using System.Runtime.InteropServices;
@@ -16,6 +30,13 @@ namespace ConsoleGame
 
         [DllImport("user32.dll")]
         public static extern bool SetCursorPos(int X, int Y);
+
+        [DllImport("user32.dll")]
+        static extern IntPtr GetForegroundWindow();
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
 
         [StructLayout(LayoutKind.Sequential)]
         public struct POINT
@@ -110,6 +131,7 @@ namespace ConsoleGame
 
         static async Task Main(string[] args)
         {
+
             Console.SetWindowSize(ScreenWidth, ScreenHeight);
             Console.SetBufferSize(ScreenWidth, ScreenHeight);
             Console.CursorVisible = false;
@@ -148,6 +170,24 @@ namespace ConsoleGame
                 }
 
                 lastMousePos = currentMousePos;
+
+                if (GetForegroundWindow() == GetConsoleWindow())
+                {
+                    // Только если окно консоли активно
+                    GetCursorPos(out currentMousePos);
+
+                    if (currentMousePos.X != lastMousePos.X)
+                    {
+                        double mouseSensitivity = 0.001;
+                        _playerA -= (currentMousePos.X - lastMousePos.X) * mouseSensitivity;
+
+                        // Возвращаем курсор в центр
+                        SetCursorPos(center.X, center.Y);
+                        currentMousePos = center;
+                    }
+
+                    lastMousePos = currentMousePos;
+                }
 
                 // Возвращаем курсор в центр
                 SetCursorPos(center.X, center.Y);
@@ -299,7 +339,7 @@ namespace ConsoleGame
         private static void GenerateRandomMap()
         {
             Map.Clear();
-            
+
             // Fill the map with empty spaces first
             for (int y = 0; y < MapHeight; y++)
             {

@@ -118,8 +118,9 @@ namespace ConsoleGame
             POINT center = new POINT { X = ScreenWidth / 2, Y = ScreenHeight / 2 };
             SetCursorPos(center.X, center.Y);
 
-            InitMap();
-            //GenerateRandomMap();
+            //методы для разных режимов игры, раскоментируйте нужный, также нужно сделать в строках 220 и 230
+            //InitMap();
+            GenerateRandomMap();
             //GenerateMaze();
             EnsurePlayerPosition();
 
@@ -216,7 +217,8 @@ namespace ConsoleGame
                             }
 
                         case ConsoleKey.R:
-                            //GenerateRandomMap();
+                            //раскоментируйте нужный режим игры
+                            GenerateRandomMap();
                             //GenerateMaze();
                             EnsurePlayerPosition();
                             break;
@@ -224,7 +226,8 @@ namespace ConsoleGame
                         case ConsoleKey.Escape:
                             return; //выход из игры
                     }
-                    InitMap();
+                    //один из режимов игры, если что закоментируйте при изменение режима игры
+                    //InitMap();
 
                 }
 
